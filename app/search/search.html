@@ -1,0 +1,45 @@
+<div class="sidebar input-group">
+    <h3>Search</h3>
+    <eui-searchbox field="'_all'"></eui-searchbox> <!-- ACTION: change to field to search on -->
+    <h3>Score</h3>
+    <ul eui-aggregation="ejs.histogram('score').field('score').size(10)" interval="500">
+        <li ng-repeat="bucket in aggResult.buckets">
+            {{bucket}}
+        </li>
+    </ul>
+    <h3>Subreddit</h3>
+    <eui-checklist field="'subreddit.name'" size="5"></eui-checklist> <!-- ACTION: change to field to use as facet -->
+    <h3>Domain</h3>
+    <eui-checklist field="'domain'" size="10"></eui-checklist> <!-- ACTION: change to field to use as facet -->
+    <h3>Results Per Page</h3>
+    <select ng-model="indexVM.pageSize">
+        <option ng-repeat="item in [10, 20, 50, 100]">{{item}}</option>
+    </select>
+</div>
+
+
+<div class="results">
+        <h1>Results</h1>
+        <ul class="res-list list-group">
+            <li ng-repeat="doc in indexVM.results.hits.hits" class="list-group-item">
+                <div class="post" >
+                    <a href="http://www.reddit.com{{doc._source.link}}">
+                        <h3>{{doc._source['link-flair']}} {{doc._source.title}}</h3>
+                        <h4>score: {{doc._source['score']}}</h4>
+                        <p>at {{ doc._source.date*1000 | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+                        by {{doc._source["user-name"]}} {{ doc._source["user-flair"]}}
+                        on {{doc._source["domain"]}}</p>
+                        <code>{{doc._source["user-text"]}}</code>
+                        <a href="{{doc._source['target']}}">target</a>
+                        <p>{{doc._source['num-of-comments']}} comments</p>
+                    </a>
+                    <div>
+                        <h3>{{doc._source.subreddit['url']}}</h3>
+                        <p>{{doc._source.subreddit['title']}}</p>
+                        <p>{{doc._source.subreddit['sub-count']}} subscribers</p>
+                    </div>
+                </div> <!-- OPTIONAL: display more meaningful data instead of json -->
+            </li>
+        </ul>
+        <eui-simple-paging></eui-simple-paging>
+</div>
