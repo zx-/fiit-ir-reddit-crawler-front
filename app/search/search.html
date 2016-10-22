@@ -1,45 +1,114 @@
-<div class="sidebar input-group">
+<div class="sidebar input-group"
+     eui-highlight="ejs.Highlight(['title','user-text', 'comments.text']).preTags('<mark>').postTags('</mark>')" eui-enabled="true"
+     eui-sort="ejs.Sort(sort).order(order)">
     <h3>Search</h3>
-    <eui-searchbox field="'_all'"></eui-searchbox> <!-- ACTION: change to field to search on -->
-    <h3>Score</h3>
-    <ul eui-aggregation="ejs.histogram('score').field('score').size(10)" interval="500">
-        <li ng-repeat="bucket in aggResult.buckets">
-            {{bucket}}
-        </li>
-    </ul>
-    <h3>Subreddit</h3>
-    <eui-checklist field="'subreddit.name'" size="5"></eui-checklist> <!-- ACTION: change to field to use as facet -->
-    <h3>Domain</h3>
-    <eui-checklist field="'domain'" size="10"></eui-checklist> <!-- ACTION: change to field to use as facet -->
+    <input type="text" eui-query="queryFn(querystring,notQuery)"
+           ng-model="querystring"
+           eui-enabled="querystring.length" />
+
+    doesn't contain: </br>
+    <input type="text" name="notSearch" ng-model="notQuery" ng-change="indexVM.refresh(false)">
+
+    <select name="singleSelect" ng-model="sort">
+        <option value="_score">relevancy</option>
+        <option value="score">score</option>
+        <option value="num-of-comments">comments</option>
+        <option value="date">date</option>
+    </select>
+    <select name="singleSelect" ng-model="order">
+        <option value="desc">desc</option>
+        <option value="asc">asc</option>
+    </select>
+    <div class="facet-widget">
+        <h3>Score</h3>
+        <ul eui-aggregation="ejs.HistogramAggregation('score').field('score').interval(1000).order('_key','desc')" class="nav nav-list">
+            <li ng-repeat="bucket in aggResult.buckets">
+                <label class="checkbox" eui-filter="ejs.RangeFilter('score').from(bucket.key).to(bucket.key+1000)">
+                    <input type="checkbox" ng-model="filter.enabled">
+                    {{bucket.key}}-{{bucket.key+1000}} ({{bucket.doc_count}})
+                </label>
+            </li>
+        </ul>
+    </div>
+    <div class="facet-widget">
+        <h3>Subreddit</h3>
+        <eui-checklist field="'subreddit.name'" size="5"></eui-checklist> <!-- ACTION: change to field to use as facet -->
+    </div>
+    <div class="facet-widget">
+        <h3>Domain</h3>
+        <eui-checklist field="'domain'" size="10"></eui-checklist> <!-- ACTION: change to field to use as facet -->
+
+    </div>
+    <div class="facet-widget">
+        <h3>Date</h3>
+        <ul eui-aggregation="ejs.DateHistogramAggregation('date').field('date').interval('5h').format('yyyy-MM-dd HH:mm:ss').script('_value*1000')"
+            class="nav nav-list">
+            <li ng-repeat="bucket in aggResult.buckets">
+                <label class="checkbox" eui-filter="ejs.RangeFilter('date').from(bucket.key/1000).to(bucket.key/1000 + 3600*5)">
+                    <input type="checkbox" ng-model="filter.enabled">
+                    {{bucket.key | date:'yyyy-MM-dd HH:mm:ss'}}-{{bucket.key+1000*3600*5 | date:'yyyy-MM-dd HH:mm'}} ({{bucket.doc_count}})
+                </label>
+            </li>
+        </ul>
+    </div>
+    <!--"num-of-comments" : {-->
+    <!--"histogram": {-->
+    <!--"field": "num-of-comments",-->
+    <!--"interval" : 1000,-->
+    <!--"order" : { "_key" : "desc" } ,-->
+    <!--"min_doc_count": 1-->
+    <!--}-->
+    <!--}-->
+    <div class="facet-widget">
+        <h3>Number of comments</h3>
+        <ul eui-aggregation="ejs.HistogramAggregation('num-of-comments').field('num-of-comments').interval(1000).order('_key','desc')"
+            class="nav nav-list">
+            <li ng-repeat="bucket in aggResult.buckets" ng-if="bucket.doc_count > 0">
+                <label class="checkbox" eui-filter="ejs.RangeFilter('score').from(bucket.key).to(bucket.key+1000)">
+                    <input type="checkbox" ng-model="filter.enabled">
+                    {{bucket.key}}-{{bucket.key+1000}} ({{bucket.doc_count}})
+                </label>
+            </li>
+        </ul>
+    </div>
+
     <h3>Results Per Page</h3>
     <select ng-model="indexVM.pageSize">
         <option ng-repeat="item in [10, 20, 50, 100]">{{item}}</option>
     </select>
 </div>
-
+<!--|| doc._source.title-->
 
 <div class="results">
-        <h1>Results</h1>
-        <ul class="res-list list-group">
-            <li ng-repeat="doc in indexVM.results.hits.hits" class="list-group-item">
-                <div class="post" >
-                    <a href="http://www.reddit.com{{doc._source.link}}">
-                        <h3>{{doc._source['link-flair']}} {{doc._source.title}}</h3>
-                        <h4>score: {{doc._source['score']}}</h4>
-                        <p>at {{ doc._source.date*1000 | date:'yyyy-MM-dd HH:mm:ss'}}</p>
-                        by {{doc._source["user-name"]}} {{ doc._source["user-flair"]}}
-                        on {{doc._source["domain"]}}</p>
-                        <code>{{doc._source["user-text"]}}</code>
-                        <a href="{{doc._source['target']}}">target</a>
-                        <p>{{doc._source['num-of-comments']}} comments</p>
-                    </a>
-                    <div>
-                        <h3>{{doc._source.subreddit['url']}}</h3>
-                        <p>{{doc._source.subreddit['title']}}</p>
-                        <p>{{doc._source.subreddit['sub-count']}} subscribers</p>
+    <h1>Results</h1>
+    <ul class="res-list list-group">
+        <li ng-repeat="doc in indexVM.results.hits.hits" class="list-group-item">
+            <div class="post" >
+                <a href="http://www.reddit.com{{doc._source.link}}">
+                    <h3>{{doc._source['link-flair']}} <span ng-bind-html="doc.highlight.title[0]"></span><span ng-hide="doc.highlight.title[0]">{{doc._source.title}}</span></h3>
+                </a>
+                <h4>score: {{doc._source['score']}}</h4>
+                <p>at {{ doc._source.date*1000 | date:'yyyy-MM-dd HH:mm:ss'}}</p>
+                by {{doc._source["user-name"]}} {{ doc._source["user-flair"]}}
+                on {{doc._source["domain"]}}</p>
+                <div class="panel panel-default" ng-if="doc._source['user-text']">
+                     <div class="panel-body">
+                        <p ng-hide="doc.highlight['user-text']" class="limited">{{doc._source["user-text"]}}</p>
+                        <p ng-repeat="t in doc.highlight['user-text']">...<span ng-bind-html="t"></span> ...</p>
                     </div>
-                </div> <!-- OPTIONAL: display more meaningful data instead of json -->
-            </li>
-        </ul>
-        <eui-simple-paging></eui-simple-paging>
+                </div>
+                 <a href="{{doc._source['target']}}">{{doc._source['target']}}</a>
+                <p>{{doc._source['num-of-comments']}} comments</p>
+                <div class="panel panel-default" ng-if="doc.highlight['comments.text']">
+                    <p ng-repeat="t in doc.highlight['comments.text']">...<span ng-bind-html="t"></span> ...</p>
+                </div>
+                <div>
+                    <h3>{{doc._source.subreddit['url']}}</h3>
+                    <p>{{doc._source.subreddit['title']}}</p>
+                    <p>{{doc._source.subreddit['sub-count']}} subscribers</p>
+                </div>
+            </div> <!-- OPTIONAL: display more meaningful data instead of json -->
+        </li>
+    </ul>
+    <eui-simple-paging></eui-simple-paging>
 </div>

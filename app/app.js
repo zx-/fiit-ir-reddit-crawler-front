@@ -3,10 +3,10 @@
 // Declare app level module which depends on views, and components
 angular.module('myApp', [
   'ngRoute',
-  'myApp.view1',
   'myApp.search',
   'myApp.version',
-  'elasticui'
+  'elasticui',
+  'ngSanitize'
 ]).
 config([
   '$locationProvider',
@@ -14,5 +14,5 @@ config([
   function($locationProvider, $routeProvider) {
     $locationProvider.hashPrefix('!');
 
-    $routeProvider.otherwise({redirectTo: '/view1'});
+    $routeProvider.otherwise({redirectTo: '/'});
 }]).constant('euiHost', 'http://rarcoo.synology.me:9200');
