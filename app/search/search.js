@@ -17,6 +17,7 @@ angular.module('myApp.search', ['ngRoute','ngSanitize'])
     $scope.sort = "_score";
     $scope.order = "desc";
     $scope.notQuery = "";
+    $scope.orQuery = "";
 
     function scoreQ(querystring){
         return ejs.FunctionScoreQuery()
@@ -31,17 +32,23 @@ angular.module('myApp.search', ['ngRoute','ngSanitize'])
             .scoreMode("sum");
     }
 
-    $scope.queryFn = function(querystring,notQuery) {
+    $scope.queryFn = function(querystring,notQuery,orQuery) {
+        var boolQ = null;
+
+        if(orQuery.length > 0) {
+            boolQ =  ejs.BoolQuery()
+                .should(scoreQ(querystring))
+                .should(scoreQ(orQuery));
+        }
 
         if(notQuery.length > 0) {
-            return ejs.BoolQuery()
-                .must(scoreQ(querystring))
-                .mustNot(ejs.MultiMatchQuery(
+            boolQ = boolQ || ejs.BoolQuery().must(scoreQ(querystring));
+            boolQ.mustNot(ejs.MultiMatchQuery(
                     ["domain", "comments.text", "subreddit.name", "title", "user-text" ],
                     notQuery));
         }
 
-        return scoreQ(querystring);
+        return boolQ || scoreQ(querystring);
     }
 
 }]);

@@ -1,14 +1,18 @@
 <div class="sidebar input-group"
-     eui-highlight="ejs.Highlight(['title','user-text', 'comments.text']).preTags('<mark>').postTags('</mark>')" eui-enabled="true"
+     eui-highlight="ejs.Highlight(['title','user-text', 'comments.text']).preTags('<mark>').postTags('</mark>').fragmentSize(250)"
+     eui-enabled="true"
      eui-sort="ejs.Sort(sort).order(order)">
     <h3>Search</h3>
-    <input type="text" eui-query="queryFn(querystring,notQuery)"
+    <input type="text" eui-query="queryFn(querystring,notQuery,orQuery)"
            ng-model="querystring"
-           eui-enabled="querystring.length" />
+           eui-enabled="querystring.length" /></br>
+    or</br>
+    <input type="text" name="orSearch" ng-model="orQuery" ng-change="indexVM.refresh(false)">
 
-    doesn't contain: </br>
+    </br>and doesn't contain: </br>
     <input type="text" name="notSearch" ng-model="notQuery" ng-change="indexVM.refresh(false)">
-
+    </br>
+    sort
     <select name="singleSelect" ng-model="sort">
         <option value="_score">relevancy</option>
         <option value="score">score</option>
@@ -21,7 +25,8 @@
     </select>
     <div class="facet-widget">
         <h3>Score</h3>
-        <ul eui-aggregation="ejs.HistogramAggregation('score').field('score').interval(1000).order('_key','desc')" class="nav nav-list">
+        <ul eui-aggregation="ejs.HistogramAggregation('score').field('score').interval(1000).order('_key','desc')"
+            class="nav nav-list">
             <li ng-repeat="bucket in aggResult.buckets">
                 <label class="checkbox" eui-filter="ejs.RangeFilter('score').from(bucket.key).to(bucket.key+1000)">
                     <input type="checkbox" ng-model="filter.enabled">
