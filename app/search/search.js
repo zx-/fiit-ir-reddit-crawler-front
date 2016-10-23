@@ -27,7 +27,7 @@ angular.module('myApp.search', ['ngRoute','ngSanitize'])
                 .type("most_fields")
                 .operator("and"))
             .function(ejs.ScriptScoreFunction()
-                .script("(doc['score'].value / log(doc['subreddit.sub-count'].value))/300"))
+                .script("(doc['score'].value / log(doc['subreddit.sub-count'].value + 1))/300"))
             .boostMode("sum")
             .scoreMode("sum");
     }
